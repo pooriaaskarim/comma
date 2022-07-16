@@ -4,37 +4,71 @@ import 'models/playback_state.dart';
 
 class ToggleButton extends StatefulWidget {
   final PlaybackState initState;
-  const ToggleButton({required this.initState, Key? key}) : super(key: key);
+  final Function() notifyParent;
+  const ToggleButton({
+    required this.initState,
+    Key? key,
+    required this.notifyParent,
+  }) : super(key: key);
 
   @override
-  State<ToggleButton> createState() => _ToggleButtonState();
+  ToggleButtonState createState() => ToggleButtonState();
 }
 
-class _ToggleButtonState extends State<ToggleButton> {
-  late PlaybackState _playbackState;
+class ToggleButtonState extends State<ToggleButton>
+    with SingleTickerProviderStateMixin {
+//#region Button Properties
   late Color _buttonBGColor;
   late double _buttonSize;
   late ButtonStyle _buttonStyle;
   late double _buttonElevation;
+  late PlaybackState _playbackState;
+  PlaybackState get playbackState => _playbackState;
+//#endregion
+
+//#region Animation
+  late final AnimationController _animationController;
+  final Duration _animationDuration = const Duration(
+    seconds: 1,
+  );
+//#endregion
+
   @override
   void initState() {
-    _playbackState = widget.initState;
     _buttonSize = 100.0;
-    _buttonElevation = 1.0;
+    _buttonElevation = 1;
+    _playbackState = widget.initState;
+
+    _animationController = AnimationController(
+      vsync: this,
+      duration: _animationDuration,
+      lowerBound: 0.3,
+      upperBound: 1.0,
+      animationBehavior: AnimationBehavior.preserve,
+    )..forward();
     super.initState();
   }
 
   @override
   void didChangeDependencies() {
-    _buttonBGColor = Theme.of(context).primaryColorDark;
+    _buttonBGColor = Theme.of(context).primaryColor;
     _buttonStyle = ButtonStyle(
       alignment: Alignment.center,
+      animationDuration: Duration.zero,
+      backgroundColor: MaterialStateProperty.all(_buttonBGColor),
       elevation: MaterialStateProperty.all(_buttonElevation),
       fixedSize: MaterialStateProperty.all(Size(_buttonSize, _buttonSize)),
-      backgroundColor: MaterialStateProperty.all(_buttonBGColor),
+      overlayColor: MaterialStateProperty.all(Colors.transparent),
       shape: MaterialStateProperty.all(const CircleBorder()),
     );
+
     super.didChangeDependencies();
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
   }
 
   @override
@@ -42,44 +76,73 @@ class _ToggleButtonState extends State<ToggleButton> {
 
   Widget toggleButton() {
     return ElevatedButton(
-      onPressed: _onPressed(),
-      onLongPress: _onLongPress(),
+      onPressed: _onPressed,
+      onLongPress: _onLongPress,
       style: _buttonStyle,
-      child: _playbackState.widget,
+      child: AnimatedBuilder(
+        builder: (BuildContext context, Widget? child) {
+          return Opacity(
+            opacity: _animationController.value,
+            child: child!,
+          );
+        },
+        animation: _animationController,
+        child: _playbackState.widget,
+      ),
     );
   }
 
-  void Function() _onPressed() {
-    switch (_playbackState) {
-      case (PlaybackState.play):
-        return () => setState(() => _playbackState = PlaybackState.pause);
-      case PlaybackState.pause:
-        return () => setState(() => _playbackState = PlaybackState.play);
-      case PlaybackState.stop:
-        return () => setState(() => _playbackState = PlaybackState.play);
-      case PlaybackState.loading:
-        return () {};
-      case PlaybackState.seeking:
-        return () {};
-      default:
-        return () {};
-    }
+  void _onPressed() {
+    setState(() {
+      switch (_playbackState) {
+        case (PlaybackState.play):
+          _playbackState = PlaybackState.pause;
+          break;
+        case PlaybackState.pause:
+          _playbackState = PlaybackState.play;
+          break;
+        case PlaybackState.stop:
+          _playbackState = PlaybackState.play;
+          break;
+        case PlaybackState.loading:
+          break;
+        case PlaybackState.seeking:
+          break;
+        default:
+          break;
+      }
+      _replayAnimation();
+      widget.notifyParent();
+    });
   }
 
-  void Function() _onLongPress() {
-    switch (_playbackState) {
-      case (PlaybackState.play):
-        return () => setState(() => _playbackState = PlaybackState.stop);
-      case PlaybackState.pause:
-        return () => setState(() => _playbackState = PlaybackState.stop);
-      case PlaybackState.stop:
-        return () => setState(() => _playbackState = PlaybackState.play);
-      case PlaybackState.loading:
-        return () {};
-      case PlaybackState.seeking:
-        return () {};
-      default:
-        return () {};
-    }
+  void _onLongPress() {
+    setState(() {
+      switch (_playbackState) {
+        case (PlaybackState.play):
+          _playbackState = PlaybackState.stop;
+          break;
+        case PlaybackState.pause:
+          _playbackState = PlaybackState.stop;
+          break;
+        case PlaybackState.stop:
+          _playbackState = PlaybackState.play;
+          break;
+        case PlaybackState.loading:
+          break;
+        case PlaybackState.seeking:
+          break;
+        default:
+          break;
+      }
+      _replayAnimation();
+      widget.notifyParent();
+    });
+  }
+
+  void _replayAnimation() {
+    _animationController
+      ..reset()
+      ..forward();
   }
 }

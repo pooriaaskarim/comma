@@ -8,9 +8,9 @@ environment:
   flutter: ">=1.17.0"
 
 dependencies:
-  audio_manager: ^0.8.2
   flutter:
     sdk: flutter
+  path_provider: ^2.0.11
 
 dev_dependencies:
   flutter_test:

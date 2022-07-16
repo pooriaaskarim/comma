@@ -12,18 +12,18 @@ extension PlaybackExtentrions on PlaybackState {
   );
   static const Widget seekingIcon = Icon(Icons.forward);
 
-  PlaybackState Function() get state {
+  String get state {
     switch (this) {
       case PlaybackState.play:
-        return () => PlaybackState.play;
+        return 'playing';
       case PlaybackState.pause:
-        return () => PlaybackState.pause;
+        return 'paused';
       case PlaybackState.stop:
-        return () => PlaybackState.stop;
+        return 'stopped';
       case PlaybackState.loading:
-        return () => PlaybackState.loading;
+        return 'loading';
       case PlaybackState.seeking:
-        return () => PlaybackState.seeking;
+        return 'seeking';
     }
   }
 
